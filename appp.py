@@ -243,11 +243,11 @@ if so_file:
             results.append(daily_result[["WH ID", "Hub ID", "product_id", "Sum of maxqty", f"Updated Hub Qty D+{day}", f"Predicted SO Qty D+{day}","stock"]])
             
         # Merge results into a single DataFrame
-        final_results_df = results[0]
-            for df in results[1:]:
+    final_results_df = results[0]
+        for df in results[1:]:
             final_results_df = final_results_df.merge(df, on=["WH ID", "Hub ID","product_id", "Sum of maxqty","stock"], how="left")
 
-        final_results_df2 = final_results_df.drop_duplicates()
+    final_results_df2 = final_results_df.drop_duplicates()
 
         #final_results_df["WH Name"] = final_results_df["wh_id"].map(wh_name_mapping)
         
