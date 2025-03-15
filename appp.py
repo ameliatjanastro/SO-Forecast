@@ -221,57 +221,57 @@ if so_file:
             results.append(daily_result[["WH ID", "Hub ID", "product_id", "Sum of maxqty", f"Updated Hub Qty D+{day}", f"Predicted SO Qty D+{day}","stock"]])
             
         # Merge results into a single DataFrame
-        final_results_df = results[0]
-        for df in results[1:]:
-            final_results_df = final_results_df.merge(df, on=["WH ID", "Hub ID","product_id", "Sum of maxqty","stock"], how="left")
+    final_results_df = results[0]
+    for df in results[1:]:
+        final_results_df = final_results_df.merge(df, on=["WH ID", "Hub ID","product_id", "Sum of maxqty","stock"], how="left")
 
-        final_results_df2 = final_results_df.drop_duplicates()
+    final_results_df2 = final_results_df.drop_duplicates()
 
         #final_results_df["WH Name"] = final_results_df["wh_id"].map(wh_name_mapping)
         
-        # Display Results
-        #st.subheader("D+1 to D+6 SO Prediction")
+    # Display Results
+    #st.subheader("D+1 to D+6 SO Prediction")
     
-        #final_results_df = final_results_df.rename(columns={"wh_id": "WH ID", "hub_id": "Hub ID"})
+    #final_results_df = final_results_df.rename(columns={"wh_id": "WH ID", "hub_id": "Hub ID"})
 
-         # Create two columns for better layout
-        col1, col2 = st.columns(2)
+    # Create two columns for better layout
+    col1, col2 = st.columns(2)
         
-        # Place the select boxes in separate columns
-        with col2:
-            selected_day = st.selectbox("Select D+X day(s)", [f"D+{i}" for i in range(1, 7)])
+    # Place the select boxes in separate columns
+    with col2:
+        selected_day = st.selectbox("Select D+X day(s)", [f"D+{i}" for i in range(1, 7)])
         
-        with col1:
-            wh_options = final_results_df["WH ID"].unique().tolist()
-            selected_wh = st.selectbox("Select WH ID", wh_options)
+    with col1:
+        wh_options = final_results_df["WH ID"].unique().tolist()
+        selected_wh = st.selectbox("Select WH ID", wh_options)
         
         # Filter the dataframe based on selected WH
         
-        final_results_df2 = final_results_df2.rename(columns={"Sum of maxqty": "Max Total Allocation"})
-        filtered_df = final_results_df2[final_results_df["WH ID"] == selected_wh]
+    final_results_df2 = final_results_df2.rename(columns={"Sum of maxqty": "Max Total Allocation"})
+    filtered_df = final_results_df2[final_results_df["WH ID"] == selected_wh]
         
-        # Select relevant columns dynamically based on the chosen day
-        selected_columns = ["WH ID","Hub ID","product_id", f"Updated Hub Qty {selected_day}", f"Predicted SO Qty {selected_day}", "Max Total Allocation","stock"]
+    # Select relevant columns dynamically based on the chosen day
+    selected_columns = ["WH ID","Hub ID","product_id", f"Updated Hub Qty {selected_day}", f"Predicted SO Qty {selected_day}", "Max Total Allocation","stock"]
         
         # Apply selection and styling
-        filtered_df = filtered_df[selected_columns]
-        filtered_df = filtered_df.dropna(how='any')
-        filtered_df = filtered_df.drop_duplicates(subset=["product_id", "Hub ID"])
+    filtered_df = filtered_df[selected_columns]
+    filtered_df = filtered_df.dropna(how='any')
+    filtered_df = filtered_df.drop_duplicates(subset=["product_id", "Hub ID"])
 
-        st.markdown('<h4 style="color: maroon;">Summary by WH by Day</h4>', unsafe_allow_html=True)
-        st.dataframe(filtered_df, use_container_width=True)
+    st.markdown('<h4 style="color: maroon;">Summary by WH by Day</h4>', unsafe_allow_html=True)
+    st.dataframe(filtered_df, use_container_width=True)
 
-        if 40 in filtered_df["WH ID"].values:
-            predicted_so_sum = filtered_df.loc[filtered_df["WH ID"] == 40, f"Predicted SO Qty {selected_day}"].sum()
-        elif 772 in filtered_df["WH ID"].values:
-            predicted_so_sum = filtered_df.loc[filtered_df["WH ID"] == 772, f"Predicted SO Qty {selected_day}"].sum()
-        else:
-            predicted_so_sum = 0  # Default value if no matching WH ID is found
+    if 40 in filtered_df["WH ID"].values:
+        predicted_so_sum = filtered_df.loc[filtered_df["WH ID"] == 40, f"Predicted SO Qty {selected_day}"].sum()
+    elif 772 in filtered_df["WH ID"].values:
+        predicted_so_sum = filtered_df.loc[filtered_df["WH ID"] == 772, f"Predicted SO Qty {selected_day}"].sum()
+    else:
+        predicted_so_sum = 0  # Default value if no matching WH ID is found
 
-        st.metric(label="Total Predicted SO Qty", value=f"{predicted_so_sum:,.0f}")
+    st.metric(label="Total Predicted SO Qty", value=f"{predicted_so_sum:,.0f}")
         
-        csv = final_results_df.to_csv(index=False).encode('utf-8')
-        st.download_button("Download D+1 to D+6 SO Prediction", csv, "d1_d6_so_prediction.csv", "text/csv")
+    csv = final_results_df.to_csv(index=False).encode('utf-8')
+    st.download_button("Download D+1 to D+6 SO Prediction", csv, "d1_d6_so_prediction.csv", "text/csv")
 
 
 
