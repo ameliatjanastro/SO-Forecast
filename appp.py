@@ -196,8 +196,8 @@ if so_file:
                         hub_forecast = ((final_so_df.loc[hub_mask, 'Sum of maxqty'] / total_maxqty) * 
                                         (dry_demand_allocation_split.get(wh_id, 0)))
 
-                        upload_time = datetime.today()
-                        upload_hour = datetime.now().hour
+                        upload_time = pd.Timestamp.now()
+                        upload_hour = upload_time.hour
                         hourly_percentages = [
                             1.45, 0.88, 0.57, 0.62, 0.68, 1.15, 2.10, 3.60, 4.80, 5.49, 5.77, 5.85,
                             5.42, 5.71, 5.75, 7.17, 7.53, 6.33, 5.46, 6.06, 5.83, 5.07, 4.02, 2.70
