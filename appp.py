@@ -241,7 +241,7 @@ if so_file:
         
             daily_result = daily_result.rename(columns={"wh_id": "WH ID", "hub_id": "Hub ID"})
             results.append(daily_result[["WH ID", "Hub ID", "product_id", "Sum of maxqty", f"Updated Hub Qty D+{day}", f"Predicted SO Qty D+{day}","stock"]])
-            
+            st.write(results)
         # Merge results into a single DataFrame
     final_results_df = results[0]
     for df in results[1:]:
