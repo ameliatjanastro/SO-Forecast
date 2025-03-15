@@ -186,9 +186,10 @@ if so_file:
             dry_demand_allocation_split = {}
             # Iterate through each WH ID and Hub ID
             for wh_id in final_so_df['WH ID'].unique():
+                total_maxqty = final_so_df.loc[(final_so_df['WH ID'] == wh_id) & (final_so_df['product_id'] == product_id),'Sum of maxqty'].sum()
                 for hub_id in final_so_df.loc[final_so_df['WH ID'] == wh_id, 'hub_id'].unique():
                     hub_mask = (daily_result['WH ID'] == wh_id) & (daily_result['hub_id'] == hub_id)
-                    total_maxqty = final_so_df.loc[(final_so_df['WH ID'] == wh_id) & (final_so_df['Product ID'] == product_id),'Sum of maxqty'].sum()
+                    
                     
                     if total_maxqty > 0:
                         hub_forecast = ((final_so_df.loc[hub_mask, 'Sum of maxqty'] / total_maxqty) * 
