@@ -244,8 +244,8 @@ if so_file:
             
         # Merge results into a single DataFrame
     final_results_df = results[0]
-        for df in results[1:]:
-            final_results_df = final_results_df.merge(df, on=["WH ID", "Hub ID","product_id", "Sum of maxqty","stock"], how="left")
+    for df in results[1:]:
+        final_results_df = final_results_df.merge(df, on=["WH ID", "Hub ID","product_id", "Sum of maxqty","stock"], how="left")
 
     final_results_df2 = final_results_df.drop_duplicates()
 
