@@ -77,7 +77,7 @@ if so_file:
     #ospo sit multiplier sebar rata
     # Get forecast dates D+1 to D+6
 
-    forecast_dates = [(today - datetime.timedelta(days=i)).strftime('%Y-%m-%d') for i in range(1, 5)]
+    forecast_dates = [(today + datetime.timedelta(days=i)).strftime('%Y-%m-%d') for i in range(0, 6)]
     
     # Filter forecast data for D+1 to D+6
     dry_forecast_df = dry_forecast_df[dry_forecast_df["date_key"].isin(forecast_dates)]
@@ -188,7 +188,7 @@ if so_file:
             for wh_id in final_so_df['WH ID'].unique():
                 for hub_id in final_so_df.loc[final_so_df['WH ID'] == wh_id, 'hub_id'].unique():
                     hub_mask = (daily_result['WH ID'] == wh_id) & (daily_result['hub_id'] == hub_id)
-                    total_maxqty = final_so_df.loc[final_so_df['WH ID'] == wh_id, 'Sum of maxqty'].sum()
+                    total_maxqty = final_so_df.loc[(final_so_df['WH ID'] == wh_id) & (final_so_df['Product ID'] == product_id),'Sum of maxqty'].sum()
                     
                     if total_maxqty > 0:
                         hub_forecast = ((final_so_df.loc[hub_mask, 'Sum of maxqty'] / total_maxqty) * 
