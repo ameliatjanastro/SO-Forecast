@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 import plotly.express as px
 
-@st.cache_data
+
 
 
 # Streamlit App Title
