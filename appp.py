@@ -54,7 +54,7 @@ st.markdown(
 final_so_df = pd.read_excel("16MAR7PM.xlsx")
 dry_forecast_df = pd.read_excel("demand_dry_productid_march.xlsx")
 # Convert the forecast date key to datetime
-dry_forecast_df_date_only['date_key'] = pd.to_datetime(dry_forecast_df['date_key'], errors='coerce', format='%Y-%m-%d')
+dry_forecast_df_date_only = pd.to_datetime(dry_forecast_df['date_key'], errors='coerce', format='%Y-%m-%d')
 
 # ---------------------------
 # Styling and Description
@@ -93,7 +93,7 @@ with st.expander("View Description"):
 # ---------------------------
 # Filter forecast dates (D+1 to D+6)
 forecast_dates = [(today + datetime.timedelta(days=i)).strftime('%Y-%m-%d') for i in range(0, 6)]
-dry_forecast_df = dry_forecast_df[dry_forecast_df["date_key"].isin(forecast_dates)]
+dry_forecast_df_final = dry_forecast_df[dry_forecast_df_date_only.isin(forecast_dates)]
 
 # Convert IDs to numeric type
 final_so_df[['wh_id', 'product_id', 'hub_id']] = final_so_df[['wh_id', 'product_id', 'hub_id']].apply(pd.to_numeric)
@@ -128,9 +128,9 @@ results = []
 prev_day_predicted_so = pd.Series(0, index=final_so_df.index)
 
 # Ensure product_id is numeric and merge forecast data
-dry_forecast_df['product_id'] = pd.to_numeric(dry_forecast_df['product_id'], errors='coerce')
+dry_forecast_df_product_id = pd.to_numeric(dry_forecast_df_final['product_id'], errors='coerce')
 merged_df = final_so_df[['product_id', 'WH ID']].merge(
-    dry_forecast_df[['product_id', 'Forecast Step 3', 'date_key']],
+    dry_forecast_df_product_id[['product_id', 'Forecast Step 3', 'date_key']],
     on='product_id',
     how='left'
 )
