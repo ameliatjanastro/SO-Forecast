@@ -54,7 +54,7 @@ st.markdown(
 final_so_df = pd.read_excel("16MAR7PM.xlsx")
 dry_forecast_df = pd.read_excel("demand_dry_productid_march.xlsx")
 # Convert the forecast date key to datetime
-dry_forecast_df['date_key'] = pd.to_datetime(dry_forecast_df['date_key'], errors='coerce', format='%Y-%m-%d')
+dry_forecast_df_date_only['date_key'] = pd.to_datetime(dry_forecast_df['date_key'], errors='coerce', format='%Y-%m-%d')
 
 # ---------------------------
 # Styling and Description
