@@ -250,8 +250,8 @@ if so_file:
         ]]
     )
 
-    # Save the predicted SO quantity to carry forward for the next day
-    prev_day_predicted_so = daily_result[f'Predicted SO Qty D+{day}'].copy()
+        # Save the predicted SO quantity to carry forward for the next day
+        prev_day_predicted_so = daily_result[f'Predicted SO Qty D+{day}'].copy()
 
             #st.write(results)
             # Merge results into a single DataFrame
