@@ -72,8 +72,8 @@ with st.expander("View Description"):
 dry_forecast_df = pd.read_excel("demand_dry_productid_march.xlsx")
 dry_forecast_df['date_key'] = pd.to_datetime(dry_forecast_df['date_key'], errors='coerce', format='%Y-%m-%d')
 
-
-final_so_df = pd.read_excel(so_file)
+if so_file:
+    final_so_df = pd.read_excel(so_file)
 
 #ospo sit multiplier sebar rata
 # Get forecast dates D+1 to D+6
