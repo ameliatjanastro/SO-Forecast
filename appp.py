@@ -269,7 +269,7 @@ if so_file:
                 # Filter the dataframe based on selected WH
                 
     final_results_df2 = final_results_df2.rename(columns={"Sum of maxqty": "Max Total Allocation"})
-    filtered_df = final_results_df2[final_results_df["WH ID"] == selected_wh]
+    filtered_df = final_results_df2[final_results_df2["WH ID"] == selected_wh]
                 
             # Select relevant columns dynamically based on the chosen day
     selected_columns = ["WH ID","Hub ID","product_id", f"Updated Hub Qty {selected_day}", f"Predicted SO Qty {selected_day}", "Max Total Allocation","stock"]
