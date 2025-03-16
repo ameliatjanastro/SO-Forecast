@@ -18,7 +18,7 @@ st.sidebar.markdown(f"📅 Today’s Date: **{today}**")
 # File Upload Section
 #so_file = st.sidebar.file_uploader("Upload SQL-estimated SO (after 9 PM best :) )", type=["xlsx"])
 #stock_df = st.sidebar.file_uploader("Upload SOH WH)", type=["xlsx"])
-#stock_df = pd.read_excel("gab.xlsx")
+stock_df = pd.read_excel("gab.xlsx")
 st.markdown(
     """
     <style>
@@ -51,10 +51,10 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-#final_so_df = pd.read_excel("16 MAR 7 PM.xlsx")
-#dry_forecast_df = pd.read_excel("demand_dry_productid3.xlsx")
+final_so_df = pd.read_excel("16 MAR 7 PM.xlsx")
+dry_forecast_df = pd.read_excel("demand_dry_productid3.xlsx")
 # Convert the forecast date key to datetime
-#dry_forecast_df['date_key'] = pd.to_datetime(dry_forecast_df['date_key'], errors='coerce', format='%Y-%m-%d')
+dry_forecast_df['date_key'] = pd.to_datetime(dry_forecast_df['date_key'], errors='coerce', format='%Y-%m-%d')
 
 # ---------------------------
 # Styling and Description
