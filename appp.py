@@ -189,22 +189,22 @@ for day, forecast_date in enumerate(forecast_dates, start=1):
                     (dry_demand_allocation_split.get(wh_id, 0))
                 )
                 # For D+1, apply hourly adjustment; for later days, use full forecast
-                if day == 1:
-                    upload_time = pd.Timestamp.now()
-                    upload_hour = upload_time.hour
-                    hourly_percentages = [
-                        1.45, 0.88, 0.57, 0.62, 0.68, 1.15, 2.10, 3.60, 4.80, 5.49, 5.77, 5.85,
-                        5.42, 5.71, 5.75, 7.17, 7.53, 6.33, 5.46, 6.06, 5.83, 5.07, 4.02, 2.70
-                    ]
-                    hourly_df = pd.DataFrame(hourly_percentages, columns=['percentage'])
-                    hourly_df['normalized'] = hourly_df['percentage'] / hourly_df['percentage'].sum()
-                    remaining_percentage = hourly_df.loc[upload_hour:, 'normalized'].sum()
-                    adjusted_hub_forecast = hub_forecast * remaining_percentage
-                else:
-                    adjusted_hub_forecast = hub_forecast
+                #if day == 1:
+                    #upload_time = pd.Timestamp.now()
+                    #upload_hour = upload_time.hour
+                    #hourly_percentages = [
+                        #1.45, 0.88, 0.57, 0.62, 0.68, 1.15, 2.10, 3.60, 4.80, 5.49, 5.77, 5.85,
+                        #5.42, 5.71, 5.75, 7.17, 7.53, 6.33, 5.46, 6.06, 5.83, 5.07, 4.02, 2.70
+                    #]
+                    #hourly_df = pd.DataFrame(hourly_percentages, columns=['percentage'])
+                    #hourly_df['normalized'] = hourly_df['percentage'] / hourly_df['percentage'].sum()
+                    #remaining_percentage = hourly_df.loc[upload_hour:, 'normalized'].sum()
+                    #adjusted_hub_forecast = hub_forecast * remaining_percentage
+                #else:
+                    #adjusted_hub_forecast = hub_forecast
 
                 # Subtract the allocated forecast from the hub quantity (ensuring non-negative)
-                daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'] -= adjusted_hub_forecast
+                daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'] -= hub_forecast
                 daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'] = daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'].clip(lower=0)
 
     # Compute Predicted SO Quantity for the day
