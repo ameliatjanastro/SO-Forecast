@@ -13,7 +13,7 @@ st.markdown(f"#### SO Qty Projection: Understanding **:red[Qty SO]** vs. **:red[
 #st.title("SO Quantity Estimation")
 
 today = datetime.date.today()
-#st.sidebar.markdown(f"📅 Today’s Date: **{today}**")
+st.sidebar.markdown(f"📅 Today’s Date: **{today}**")
 
 # File Upload Section
 #so_file = st.sidebar.file_uploader("Upload SQL-estimated SO (after 9 PM best :) )", type=["xlsx"])
