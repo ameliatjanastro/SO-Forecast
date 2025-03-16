@@ -138,109 +138,122 @@ if so_file:
     
     
     results = []
-        #temporary
-        #split_product_ids_df = pd.read_csv("splitadd.csv")
-        #split_product_ids = set(split_product_ids_df["product_id"].tolist())
-        #split_product_ids = pd.to_numeric(split_product_ids_df['product_id'], errors='coerce')
-            
+    # Initialize a Series (indexed like final_so_df) to hold the previous day's predicted SO quantity.
+    prev_day_predicted_so = pd.Series(0, index=final_so_df.index)
+    
+    # Ensure product_id is numeric and merge the forecast data
     dry_forecast_df['product_id'] = pd.to_numeric(dry_forecast_df['product_id'], errors='coerce')
-    merged_df = final_so_df[['product_id', 'WH ID']].merge(dry_forecast_df[['product_id', 'Forecast Step 3','date_key']], on='product_id', how='left')
-            
-        #st.write(merged_df.head())
-        #st.write(f"Forecast Dates: {merged_df["date_key"].unique()}")
-            
+    merged_df = final_so_df[['product_id', 'WH ID']].merge(
+        dry_forecast_df[['product_id', 'Forecast Step 3', 'date_key']],
+        on='product_id',
+        how='left'
+    )
+    
     for day, forecast_date in enumerate(forecast_dates, start=1):
-            for product_id in merged_df["product_id"].unique():
-                # Get the daily dry forecast for the given date and product ID
-                daily_dry_forecast = merged_df[
-                    (merged_df["date_key"] == forecast_date) & 
-                    (merged_df["product_id"] == product_id)
-                ]["Forecast Step 3"].sum()
-                    
-                wh_40_products = set(merged_df.loc[merged_df["WH ID"] == 40, "product_id"])
-                wh_772_products = set(merged_df.loc[merged_df["WH ID"] == 772, "product_id"])
-                    
-                    # Determine common products and merge with split_product_ids
-                common_products = wh_40_products.intersection(wh_772_products)#.union(split_product_ids)
-                    
-                    # Display a few common products for debugging
-                    #st.write(f"Number of common products: {len(common_products)}")
-                    
-                    # Allocate Demand Forecast to WHs
-                if product_id in common_products:
-                    dry_demand_allocation_split = {
-                        772: int(daily_dry_forecast * 0.62),
-                        40: int(daily_dry_forecast * 0.38)
-                    }
-                elif product_id in wh_40_products:
-                    dry_demand_allocation_split = {40: int(daily_dry_forecast)}
-                elif product_id in wh_772_products:
-                    dry_demand_allocation_split = {772: int(daily_dry_forecast)}
-                else:
-                    dry_demand_allocation_split = {772: daily_dry_forecast}
-                
-                #print(f"Product ID: {product_id}, Dry Demand Allocation Split:", dry_demand_allocation_split)
-                 
-            daily_result = final_so_df.copy()
+        # Start with a copy of the base SO DataFrame
+        daily_result = final_so_df.copy()
+    
+        # For D+1, use the original hub quantity; for D+2 and beyond, add previous day's predicted SO qty.
+        if day == 1:
             daily_result[f'Updated Hub Qty D+{day}'] = daily_result['Sum of hub_qty']
+        else:
+            daily_result[f'Updated Hub Qty D+{day}'] = daily_result['Sum of hub_qty'] + prev_day_predicted_so
     
-            dry_demand_allocation_split = {}
-                # Iterate through each WH ID and Hub ID
-            for wh_id in final_so_df['WH ID'].unique():
-                total_maxqty = final_so_df.loc[(final_so_df['WH ID'] == wh_id) & (final_so_df['product_id'] == product_id),'Sum of maxqty'].sum()
-                for hub_id in final_so_df.loc[final_so_df['WH ID'] == wh_id, 'hub_id'].unique():
-                    hub_mask = (daily_result['WH ID'] == wh_id) & (daily_result['hub_id'] == hub_id)
+        # Loop through each product to allocate forecast demand
+        for product_id in merged_df["product_id"].unique():
+            # Get the forecast value for the product on the given date
+            daily_dry_forecast = merged_df[
+                (merged_df["date_key"] == forecast_date) &
+                (merged_df["product_id"] == product_id)
+            ]["Forecast Step 3"].sum()
     
-                    if total_maxqty > 0:
-                        hub_forecast = ((final_so_df.loc[hub_mask, 'Sum of maxqty'] / total_maxqty) * 
-                                        (dry_demand_allocation_split.get(wh_id, 0)))
+            # Identify which warehouses carry this product
+            wh_40_products = set(merged_df.loc[merged_df["WH ID"] == 40, "product_id"])
+            wh_772_products = set(merged_df.loc[merged_df["WH ID"] == 772, "product_id"])
+            common_products = wh_40_products.intersection(wh_772_products)
     
+            # Allocate the forecast to WHs based on product membership
+            if product_id in common_products:
+                dry_demand_allocation_split = {
+                    772: int(daily_dry_forecast * 0.62),
+                    40: int(daily_dry_forecast * 0.38)
+                }
+            elif product_id in wh_40_products:
+                dry_demand_allocation_split = {40: int(daily_dry_forecast)}
+            elif product_id in wh_772_products:
+                dry_demand_allocation_split = {772: int(daily_dry_forecast)}
+            else:
+                dry_demand_allocation_split = {772: daily_dry_forecast}
+    
+            # For each warehouse (WH) and hub for this product, allocate forecast
+            # We filter rows in daily_result for the current product_id
+            product_mask = daily_result['product_id'] == product_id
+            for wh_id in daily_result.loc[product_mask, 'WH ID'].unique():
+                wh_mask = daily_result['WH ID'] == wh_id
+                # Sum of max allocation for this product and WH
+                total_maxqty = daily_result.loc[product_mask & wh_mask, 'Sum of maxqty'].sum()
+                if total_maxqty == 0:
+                    continue
+    
+                # Process each hub within the WH for this product
+                for hub_id in daily_result.loc[product_mask & wh_mask, 'hub_id'].unique():
+                    hub_mask = (daily_result['WH ID'] == wh_id) & (daily_result['hub_id'] == hub_id) & product_mask
+    
+                    # Calculate the share of forecast for the hub based on its max allocation share
+                    hub_forecast = (
+                        (daily_result.loc[hub_mask, 'Sum of maxqty'] / total_maxqty) *
+                        (dry_demand_allocation_split.get(wh_id, 0))
+                    )
+                    # For D+1, apply hourly adjustment; for later days, use full forecast
+                    if day == 1:
                         upload_time = pd.Timestamp.now()
                         upload_hour = upload_time.hour
                         hourly_percentages = [
-                                1.45, 0.88, 0.57, 0.62, 0.68, 1.15, 2.10, 3.60, 4.80, 5.49, 5.77, 5.85,
-                                5.42, 5.71, 5.75, 7.17, 7.53, 6.33, 5.46, 6.06, 5.83, 5.07, 4.02, 2.70
+                            1.45, 0.88, 0.57, 0.62, 0.68, 1.15, 2.10, 3.60, 4.80, 5.49, 5.77, 5.85,
+                            5.42, 5.71, 5.75, 7.17, 7.53, 6.33, 5.46, 6.06, 5.83, 5.07, 4.02, 2.70
                         ]
-                            
-                        # Convert to a DataFrame for easier handling
                         hourly_df = pd.DataFrame(hourly_percentages, columns=['percentage'])
-                            
-                        # Normalize the percentages to sum up to 1
                         hourly_df['normalized'] = hourly_df['percentage'] / hourly_df['percentage'].sum()
-                            
-                        # Calculate the remaining percentage after the upload hour
                         remaining_percentage = hourly_df.loc[upload_hour:, 'normalized'].sum()
-                            
-                        # Adjust the hub forecast based on the remaining percentage
                         adjusted_hub_forecast = hub_forecast * remaining_percentage
-                        
                     else:
-                        adjusted_hub_forecast = 0
-                        
+                        adjusted_hub_forecast = hub_forecast
+    
+                    # Subtract the allocated forecast from the hub quantity (ensuring non-negative)
                     daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'] -= adjusted_hub_forecast
-                    daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'] = daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'].clip(lower=0)
-                        
-            # Compute Predicted SO Quantity
-            daily_result[f'Predicted SO Qty D+{day}'] = (
-                (daily_result['Sum of maxqty'] - daily_result[f'Updated Hub Qty D+{day}']) / daily_result['Sum of multiplier']) * daily_result['Sum of multiplier']
-            daily_result[f'Predicted SO Qty D+{day}'] = daily_result[f'Predicted SO Qty D+{day}'].clip(lower=0)
-                
-                # Adjust Predicted SO Quantity based on stock availability
-                # Merge daily_result with stock_df to add the 'stock' column
+                    daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'] = \
+                        daily_result.loc[hub_mask, f'Updated Hub Qty D+{day}'].clip(lower=0)
     
-            daily_result = daily_result.merge(stock_df[['product_id', 'WH ID', 'stock']], on=['WH ID','product_id'], how='left')
-                
-                # Set Predicted SO Qty to NaN if stock is less than the predicted quantity
-            total_predicted_so = (daily_result.groupby(['product_id', 'WH ID'])[f'Predicted SO Qty D+{day}'].transform('sum'))
-            
-                # Set Predicted SO Qty to NaN if stock is less than the predicted SO Qty
-            daily_result.loc[ daily_result['stock'] < total_predicted_so, f'Predicted SO Qty D+{day}'] = np.nan
+        # Compute Predicted SO Quantity for the day
+        daily_result[f'Predicted SO Qty D+{day}'] = (
+            (daily_result['Sum of maxqty'] - daily_result[f'Updated Hub Qty D+{day}']) /
+            daily_result['Sum of multiplier']
+        ) * daily_result['Sum of multiplier']
+        daily_result[f'Predicted SO Qty D+{day}'] = daily_result[f'Predicted SO Qty D+{day}'].clip(lower=0)
     
-            daily_result[f'Predicted SO Qty D+{day}'] = daily_result[f'Predicted SO Qty D+{day}'].fillna(0)
-            
-            daily_result = daily_result.rename(columns={"wh_id": "WH ID", "hub_id": "Hub ID"})
-            results.append(daily_result[["WH ID", "Hub ID", "product_id", "Sum of maxqty", f"Updated Hub Qty D+{day}", f"Predicted SO Qty D+{day}","stock"]])
-            st.write(results)
+        # Adjust based on stock availability by merging with the stock DataFrame
+        daily_result = daily_result.merge(
+            stock_df[['product_id', 'WH ID', 'stock']],
+            on=['WH ID', 'product_id'],
+            how='left'
+        )
+        total_predicted_so = daily_result.groupby(['product_id', 'WH ID'])[f'Predicted SO Qty D+{day}'].transform('sum')
+        daily_result.loc[daily_result['stock'] < total_predicted_so, f'Predicted SO Qty D+{day}'] = np.nan
+        daily_result[f'Predicted SO Qty D+{day}'] = daily_result[f'Predicted SO Qty D+{day}'].fillna(0)
+    
+        # Rename columns if needed and append the result for this day to the list
+        daily_result = daily_result.rename(columns={"wh_id": "WH ID", "hub_id": "Hub ID"})
+        results.append(
+        daily_result[[
+            "WH ID", "Hub ID", "product_id", "Sum of maxqty",
+            f"Updated Hub Qty D+{day}", f"Predicted SO Qty D+{day}", "stock"
+        ]]
+    )
+
+    # Save the predicted SO quantity to carry forward for the next day
+    prev_day_predicted_so = daily_result[f'Predicted SO Qty D+{day}'].copy()
+
+            #st.write(results)
             # Merge results into a single DataFrame
     final_results_df = results[0]
     for df in results[1:]:
